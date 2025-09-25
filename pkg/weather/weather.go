@@ -20,10 +20,14 @@ type WeatherResp struct {
 	Lon         float64 `json:"lon,omitempty"`
 }
 
+// Reusable HTTP client with a 10s timeout.
+// Saves resources vs creating new clients for every request,
+// and avoids hanging forever if the API is slow.
 var httpClient = &http.Client{Timeout: 10 * time.Second}
 
-// cityEntry is a permissive struct for your locations file.
-// It tries common field names so it works with small variations.
+// cityEntry is an internal helper for decoding cities.json.
+// It tolerates different field names (name/city, lat/latitude, lon/longitude).
+// Not exported (lowercase c) because it's only used inside this package.
 type cityEntry struct {
 	Name      string  `json:"name"`
 	City      string  `json:"city"`
@@ -33,8 +37,11 @@ type cityEntry struct {
 	Lon       float64 `json:"lon"`
 }
 
-// readCities tries to read locations/cities.json from the repo root.
-// It returns a map keyed by lowercased city name -> (lat, lon).
+// readCities loads locations/cities.json into a map: cityName -> [lat, lon].
+// 1. Always starts with a Chennai fallback (so it never breaks).
+// 2. Tries to parse JSON as array of cityEntry objects.
+// 3. If that fails, tries JSON as object map (name -> coords).
+// 4. Falls back to Chennai only if everything fails.
 func readCities() map[string][2]float64 {
 	// default fallback map with Chennai
 	out := map[string][2]float64{
@@ -98,6 +105,8 @@ func readCities() map[string][2]float64 {
 	return out
 }
 
+// firstNonEmpty picks the first non-blank string.
+// Useful for preferring Name over City when decoding cities.json.
 func firstNonEmpty(s1, s2 string) string {
 	if strings.TrimSpace(s1) != "" {
 		return s1
@@ -105,6 +114,8 @@ func firstNonEmpty(s1, s2 string) string {
 	return s2
 }
 
+// firstNonZero picks the first non-zero float.
+// Useful for preferring Lat over Latitude, Lon over Longitude, etc.
 func firstNonZero(f1, f2 float64) float64 {
 	if f1 != 0 {
 		return f1
