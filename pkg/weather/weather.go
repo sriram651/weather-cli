@@ -163,8 +163,11 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 		return WeatherResp{}, err
 	}
 
-	// Minimal description: you can later wire your weather_codes package here.
-	desc := fmt.Sprintf("code:%d (live-open-meteo)", raw.CurrentWeather.WeatherCode)
+	codes := loadWeatherCodes()
+	desc, ok := codes[raw.CurrentWeather.WeatherCode]
+	if !ok {
+		desc = fmt.Sprintf("Unknown code %d", raw.CurrentWeather.WeatherCode)
+	}
 
 	out := WeatherResp{
 		City:        city,
@@ -175,4 +178,29 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 		Lon:         raw.Longitude,
 	}
 	return out, nil
+}
+
+func loadWeatherCodes() map[int]string {
+	file := "weather_codes/data.json"
+	data, err := os.ReadFile(file)
+	if err != nil {
+		// fallback minimal map
+		return map[int]string{
+			0: "Clear sky",
+			1: "Mainly clear",
+			2: "Partly cloudy",
+			3: "Overcast",
+		}
+	}
+	var m map[string]string
+	if err := json.Unmarshal(data, &m); err != nil {
+		return map[int]string{}
+	}
+	out := make(map[int]string)
+	for k, v := range m {
+		var code int
+		fmt.Sscanf(k, "%d", &code)
+		out[code] = v
+	}
+	return out
 }
