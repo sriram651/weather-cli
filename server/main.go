@@ -21,6 +21,11 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+
+	// Allow browser requests from any origin (CORS).
+	// Needed so the upcoming web UI can call this API directly.
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	json.NewEncoder(w).Encode(resp)
 }
 
