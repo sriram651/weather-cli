@@ -1,12 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { WeatherResp } from "@/types/responses" // you exported this — good call
+import { WeatherResp } from "@/types/responses"
 
-// Small, intentional UI for v0.1:
-// - input for city
-// - button to fetch from your Go server at :8080
-// - shows loading / error / pretty JSON or a simple card
 export default function Page() {
 	const [city, setCity] = useState<string>("")
 	const [loading, setLoading] = useState(false)
@@ -20,10 +16,29 @@ export default function Page() {
 		try {
 			const q = encodeURIComponent(city || "")
 			const res = await fetch(`http://localhost:8080/weather?city=${q}`)
-			if (!res.ok) {
-				const txt = await res.text()
-				throw new Error(txt || `status ${res.status}`)
+
+			// Handle NOT FOUND (city not in DB)
+			if (res.status === 404) {
+				// backend returns JSON like {"error":"city not found"}
+				let txt = "City not found"
+				try {
+					const j = await res.json()
+					if (j && typeof j.error === "string") txt = j.error
+				} catch (e) {
+					/* ignore JSON parse errors, keep generic message */
+				}
+				setError(txt)
+				return
 			}
+
+			if (!res.ok) {
+				// try to show helpful text from backend, fallback to status
+				let body = await res.text()
+				body = body ? body : `status ${res.status}`
+				setError(`Server error: ${body}`)
+				return
+			}
+
 			const json = (await res.json()) as WeatherResp
 			setData(json)
 		} catch (err: unknown) {
@@ -42,7 +57,13 @@ export default function Page() {
 			<div className="w-full max-w-2xl">
 				<h1 className="text-2xl font-semibold mb-4">Weather Digest — v0.1</h1>
 
-				<div className="flex gap-3 items-center">
+				<form
+					onSubmit={(e) => {
+						e.preventDefault() // prevent page reload
+						fetchWeather()
+					}}
+					className="flex gap-3 items-center"
+				>
 					<input
 						value={city}
 						onChange={(e) => setCity(e.target.value)}
@@ -50,18 +71,19 @@ export default function Page() {
 						className="flex-1 px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
 					/>
 					<button
-						onClick={fetchWeather}
-						disabled={loading}
-						className="px-4 py-2 rounded bg-teal-600 text-white disabled:opacity-60"
+						type="submit"
+						disabled={loading || !city.trim()}
+						className="px-4 py-2 rounded bg-teal-600 text-white cursor-pointer hover:opacity-90 disabled:opacity-60 disabled:cursor-default"
 					>
-						{loading ? "Loading…" : "Get Weather"}
+						{loading ? "Loading..." : "Get Weather"}
 					</button>
-				</div>
+				</form>
+
 
 				<div className="mt-6">
 					{error && (
-						<div className="text-red-600 bg-red-50 dark:bg-red-900/30 p-3 rounded">
-							Error: {error}
+						<div className="capitalize text-red-700 bg-red-50 dark:bg-red-900/30 p-3 rounded">
+							{error}
 						</div>
 					)}
 
@@ -87,7 +109,9 @@ export default function Page() {
 							</details>
 						</div>
 					) : (
-						<div className="mt-4 text-sm text-slate-500">No data yet — ask for weather.</div>
+						!error && (
+							<div className="mt-4 text-sm text-slate-500">No data yet — ask for weather.</div>
+						)
 					)}
 				</div>
 			</div>
