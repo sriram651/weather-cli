@@ -21,6 +21,7 @@ export default function Page() {
 				setFavorites(JSON.parse(raw) as string[])
 			}
 		} catch (e) {
+			console.error("failed to load favorites", e)
 			// ignore parse problems, start fresh
 			setFavorites([])
 		}
@@ -30,6 +31,7 @@ export default function Page() {
 		try {
 			localStorage.setItem(FAVORITES_KEY, JSON.stringify(list))
 		} catch (e) {
+			console.error("failed to persist favorites", e)
 			// ignore storage errors for v0.1
 		}
 	}
@@ -78,8 +80,12 @@ export default function Page() {
 			setData(json)
 			// prefill input with canonical city string returned by API
 			if (json.city) setCity(json.city)
-		} catch (err: any) {
-			setError(err?.message ?? "unknown error")
+		} catch (err: unknown) {
+			if (err instanceof Error) {
+				setError(err.message)
+			}
+
+			setError("unknown error")
 		} finally {
 			setLoading(false)
 		}
