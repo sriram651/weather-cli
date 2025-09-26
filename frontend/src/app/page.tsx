@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { WeatherResp } from "@/types/responses"
+import Favorites from "@/components/Favourites"
 
 const FAVORITES_KEY = "weather:favorites"
 const FAVORITES_LIMIT = 5
@@ -127,27 +128,11 @@ export default function Page() {
 				</form>
 
 				{/* Favorites quick buttons */}
-				{favorites.length > 0 && (
-					<div className="mt-3 flex flex-wrap gap-2">
-						{favorites.map((f) => (
-							<div key={f} className="px-3 py-1 flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-								<button
-									onClick={() => fetchWeatherFor(f)}
-									className="rounded text-sm"
-								>
-									{f}
-								</button>
-								<button
-									onClick={() => removeFavorite(f)}
-									className="rounded text-xs text-red-600"
-									aria-label={`remove ${f}`}
-								>
-									✕
-								</button>
-							</div>
-						))}
-					</div>
-				)}
+				<Favorites
+					favorites={favorites}
+					onFetch={(c) => fetchWeatherFor(c)}
+					onRemove={(c) => removeFavorite(c)}
+				/>
 
 				<div className="mt-6">
 					{error && (
