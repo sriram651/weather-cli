@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { WeatherResp } from "@/types/responses"
 import Favorites from "@/components/Favourites"
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const FAVORITES_KEY = "weather:favorites"
 const FAVORITES_LIMIT = 5
@@ -128,7 +129,6 @@ export default function Page() {
 					</button>
 				</form>
 
-				{/* Favorites quick buttons */}
 				<Favorites
 					favorites={favorites}
 					onFetch={(c) => fetchWeatherFor(c)}
@@ -136,18 +136,21 @@ export default function Page() {
 				/>
 
 				<div className="mt-6">
-					{error && (
+					{loading && (
+						<Skeleton className="w-full h-60 bg-slate-200 dark:bg-slate-700" />
+					)}
+
+					{!loading && error && (
 						<div className="text-red-700 bg-red-50 dark:bg-red-900/30 p-3 rounded">
 							{error}
 						</div>
 					)}
 
-					{data ? (
+					{!loading && !error && data && (
 						<WeatherCard data={data} />
-					) : (
-						!error && (
-							<div className="mt-4 text-sm text-slate-500">No data yet — ask for weather.</div>
-						)
+					)}
+					{!loading && !error && !data && (
+						<div className="mt-4 text-sm text-slate-500">No data yet — ask for weather.</div>
 					)}
 				</div>
 			</div>
