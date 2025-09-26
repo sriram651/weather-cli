@@ -3,7 +3,9 @@ package weather
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -42,32 +44,29 @@ type cityEntry struct {
 // 2. Tries to parse JSON as array of cityEntry objects.
 // 3. If that fails, tries JSON as object map (name -> coords).
 // 4. Falls back to Chennai only if everything fails.
-func readCities() map[string][2]float64 {
-	// default fallback map with Chennai
-	out := map[string][2]float64{
-		"chennai": {13.0827, 80.2707},
-	}
-
-	// try to read locations/cities.json relative to working dir
+func readCities() (map[string][2]float64, error) {
+	// try to read locations/cities.json relative to working dir or parent
 	paths := []string{
 		"locations/cities.json",
-		filepath.Join("..", "locations", "cities.json"), // in case of different cwd during tests
+		filepath.Join("..", "locations", "cities.json"),
 	}
+
 	var data []byte
-	var err error
+	var lastErr error
 	for _, p := range paths {
-		data, err = os.ReadFile(p)
-		if err == nil {
+		data, lastErr = os.ReadFile(p)
+		if lastErr == nil && len(data) > 0 {
 			break
 		}
 	}
-	if err != nil || len(data) == 0 {
-		// give up, return fallback
-		return out
+
+	if lastErr != nil || len(data) == 0 {
+		return nil, fmt.Errorf("readCities: failed to read locations/cities.json: %w", lastErr)
 	}
 
-	// expect either an array of objects or an object mapping names -> coords
-	// Try array first
+	out := make(map[string][2]float64)
+
+	// try array-of-objects first
 	var arr []cityEntry
 	if err := json.Unmarshal(data, &arr); err == nil && len(arr) > 0 {
 		for _, e := range arr {
@@ -77,14 +76,18 @@ func readCities() map[string][2]float64 {
 			}
 			lat := firstNonZero(e.Lat, e.Latitude)
 			lon := firstNonZero(e.Lon, e.Longitude)
+			// only add if we have non-zero coords
 			if lat != 0 || lon != 0 {
 				out[name] = [2]float64{lat, lon}
 			}
 		}
-		return out
+		if len(out) == 0 {
+			return nil, fmt.Errorf("readCities: parsed file but found no valid entries")
+		}
+		return out, nil
 	}
 
-	// Try object mapping: { "chennai": { "lat": 13.0, "lon": 80.0 }, ... }
+	// try object mapping: { "city": { "lat": .., "lon": .. }, ... }
 	var obj map[string]map[string]float64
 	if err := json.Unmarshal(data, &obj); err == nil && len(obj) > 0 {
 		for k, v := range obj {
@@ -96,13 +99,18 @@ func readCities() map[string][2]float64 {
 			if lon == 0 {
 				lon = v["longitude"]
 			}
-			out[strings.ToLower(strings.TrimSpace(k))] = [2]float64{lat, lon}
+			if lat != 0 || lon != 0 {
+				out[strings.ToLower(strings.TrimSpace(k))] = [2]float64{lat, lon}
+			}
 		}
-		return out
+		if len(out) == 0 {
+			return nil, fmt.Errorf("readCities: parsed object but found no valid coords")
+		}
+		return out, nil
 	}
 
-	// If everything fails, return fallback
-	return out
+	// everything failed
+	return nil, fmt.Errorf("readCities: unsupported JSON structure or empty file")
 }
 
 // firstNonEmpty picks the first non-blank string.
@@ -125,37 +133,62 @@ func firstNonZero(f1, f2 float64) float64 {
 
 // GetWeather looks up coordinates for the city, calls Open-Meteo current_weather,
 // and returns a sanitized WeatherResp.
+// near the top of pkg/weather/weather.go add these imports if not present:
+//   "context"
+//   "encoding/json"
+//   "fmt"
+//   "io"
+//   "net/http"
+//   "strings"
+//   "errors"
+
+var (
+	ErrCitiesUnavailable = errors.New("cities data unavailable")
+	ErrCityNotFound      = errors.New("city not found")
+)
+
 func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
-	if city == "" {
-		city = "chennai"
+	if strings.TrimSpace(city) == "" {
+		return WeatherResp{}, fmt.Errorf("city name is required")
 	}
 	cityKey := strings.ToLower(strings.TrimSpace(city))
 
-	cities := readCities()
+	cities, err := readCities()
+	if err != nil {
+		// propagate a clear error; handler will map to 500
+		return WeatherResp{}, fmt.Errorf("%w: %v", ErrCitiesUnavailable, err)
+	}
+
+	// Try exact key first, then a simple heuristic (trim after comma)
 	coords, ok := cities[cityKey]
-	lat := coords[0]
-	lon := coords[1]
 	if !ok {
-		// try simple heuristic: if user passed "chennai, in" or extra words, trim to first token
 		first := strings.Split(cityKey, ",")[0]
 		if v, ok2 := cities[first]; ok2 {
-			lat, lon = v[0], v[1]
+			coords = v
 		} else {
-			// keep Chennai fallback if nothing found
-			lat, lon = cities["chennai"][0], cities["chennai"][1]
+			// Let the caller decide to return 404
+			return WeatherResp{}, ErrCityNotFound
 		}
 	}
 
+	lat := coords[0]
+	lon := coords[1]
+
 	// build Open-Meteo URL for current weather
-	// timezone=auto will return time in local timezone when available
 	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f&current_weather=true&timezone=auto", lat, lon)
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return WeatherResp{}, err
+		return WeatherResp{}, fmt.Errorf("upstream request failed: %w", err)
 	}
 	defer resp.Body.Close()
+
+	// if upstream returns non-200, capture body to help debugging
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return WeatherResp{}, fmt.Errorf("upstream error %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
 
 	var raw struct {
 		Latitude       float64 `json:"latitude"`
@@ -171,7 +204,7 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return WeatherResp{}, err
+		return WeatherResp{}, fmt.Errorf("decode failed: %w", err)
 	}
 
 	codes := loadWeatherCodes()
