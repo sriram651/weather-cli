@@ -25,6 +25,7 @@ export default function Page() {
 					const j = await res.json()
 					if (j && typeof j.error === "string") txt = j.error
 				} catch (e) {
+					console.error("Error parsing 404 JSON", e)
 					/* ignore JSON parse errors, keep generic message */
 				}
 				setError(txt)
