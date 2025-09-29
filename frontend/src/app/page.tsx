@@ -5,6 +5,8 @@ import { WeatherResp } from "@/types/responses"
 import Favorites from "@/components/Favourites"
 import { Skeleton } from "@/components/ui/skeleton"
 import WeatherCard from "@/components/WeatherCard"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 const FAVORITES_KEY = "weather:favorites"
 const FAVORITES_LIMIT = 5
@@ -119,14 +121,14 @@ export default function Page() {
 						disabled={loading}
 						className="px-4 py-2 rounded bg-teal-600 text-white cursor-pointer hover:opacity-90 disabled:opacity-60 disabled:cursor-default"
 					>
-						{loading ? "Loading..." : "Get Weather"}
+						{loading ? "Forecasting..." : "Get Weather"}
 					</button>
 					{/* Save button only visible when we have data */}
 					<button
 						type="button"
 						onClick={() => data && addFavorite(data.city)}
 						disabled={!data}
-						className="px-3 py-2 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 disabled:opacity-50 ml-2"
+						className="px-3 py-2 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 disabled:opacity-50"
 					>
 						Save
 					</button>
@@ -138,16 +140,16 @@ export default function Page() {
 					onRemove={(c) => removeFavorite(c)}
 				/>
 
-				<div className="mt-4 flex gap-2">
-					<button
-						type="button"
-						onClick={() => setUnit(unit === "C" ? "F" : "C")}
-						className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 text-sm"
-					>
-						Show in °{unit === "C" ? "F" : "C"}
-					</button>
+				<div className="mt-4 ml-auto flex items-center space-x-2">
+					<Switch
+						id="celcius-fahrenheit"
+						checked={unit === "F"}
+						onCheckedChange={(value) => setUnit(value ? "F" : "C")}
+					/>
+					<Label htmlFor="celcius-fahrenheit">
+						Switch to °{unit === "C" ? "F" : "C"}
+					</Label>
 				</div>
-
 
 				<div className="mt-6">
 					{loading && (
