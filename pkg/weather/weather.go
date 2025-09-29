@@ -20,6 +20,9 @@ type WeatherResp struct {
 	Timestamp   string  `json:"time"`
 	Lat         float64 `json:"lat,omitempty"`
 	Lon         float64 `json:"lon,omitempty"`
+	WeatherCode int     `json:"weather_code"`
+	Humidity    float64 `json:"relative_humidity_2m"`
+	Rain        float64 `json:"rain"`
 }
 
 // Reusable HTTP client with a 10s timeout.
@@ -196,10 +199,12 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 		Generationtime float64 `json:"generationtime_ms"`
 		CurrentWeather struct {
 			Temperature float64 `json:"temperature"`
-			WeatherCode int     `json:"weathercode"`
+			WeatherCode int     `json:"weather_code"`
 			Time        string  `json:"time"`
 			Windspeed   float64 `json:"windspeed"`
 			Winddir     float64 `json:"winddirection"`
+			Humidity    float64 `json:"relative_humidity_2m"`
+			Rain        float64 `json:"rain"`
 		} `json:"current_weather"`
 	}
 
@@ -212,6 +217,7 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	if !ok {
 		desc = fmt.Sprintf("Unknown code %d", raw.CurrentWeather.WeatherCode)
 	}
+	fmt.Printf("Weather: %+v\n", raw)
 
 	out := WeatherResp{
 		City:        city,
@@ -220,6 +226,8 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 		Timestamp:   raw.CurrentWeather.Time,
 		Lat:         raw.Latitude,
 		Lon:         raw.Longitude,
+		Humidity:    raw.CurrentWeather.Humidity,
+		Rain:        raw.CurrentWeather.Rain,
 	}
 	return out, nil
 }
