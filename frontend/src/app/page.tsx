@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react"
 import { WeatherResp } from "@/types/responses"
 import Favorites from "@/components/Favourites"
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import WeatherCard from "@/components/WeatherCard"
 
 const FAVORITES_KEY = "weather:favorites"
 const FAVORITES_LIMIT = 5
@@ -15,6 +15,9 @@ export default function Page() {
 	const [error, setError] = useState<string | null>(null)
 	const [data, setData] = useState<WeatherResp | null>(null)
 	const [favorites, setFavorites] = useState<string[]>([])
+
+	// Temp conversion flag
+	const [unit, setUnit] = useState<"C" | "F">("C")
 
 	useEffect(() => {
 		// load favorites from localStorage on mount
@@ -135,6 +138,17 @@ export default function Page() {
 					onRemove={(c) => removeFavorite(c)}
 				/>
 
+				<div className="mt-4 flex gap-2">
+					<button
+						type="button"
+						onClick={() => setUnit(unit === "C" ? "F" : "C")}
+						className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 text-sm"
+					>
+						Show in °{unit === "C" ? "F" : "C"}
+					</button>
+				</div>
+
+
 				<div className="mt-6">
 					{loading && (
 						<Skeleton className="w-full h-60 bg-slate-200 dark:bg-slate-700" />
@@ -147,7 +161,7 @@ export default function Page() {
 					)}
 
 					{!loading && !error && data && (
-						<WeatherCard data={data} />
+						<WeatherCard data={data} onSave={(city) => addFavorite(city)} unit={unit} />
 					)}
 					{!loading && !error && !data && (
 						<div className="mt-4 text-sm text-slate-500">No data yet — ask for weather.</div>
@@ -155,62 +169,5 @@ export default function Page() {
 				</div>
 			</div>
 		</main>
-	)
-}
-
-function WeatherCard({ data }: { data: WeatherResp }) {
-
-	function formatDisplayTime(t?: string) {
-		if (!t) return "—"
-		try {
-			const d = new Date(t)
-			if (isNaN(d.getTime())) return t
-			return d.toLocaleString(undefined, {
-				weekday: "short",
-				day: "numeric",
-				month: "short",
-				hour: "2-digit",
-				minute: "2-digit",
-				timeZoneName: "shortGeneric",
-			})
-		} catch {
-			return t
-		}
-	}
-
-	return (
-		<Card
-			className="gap-2"
-		>
-			<CardHeader
-				className="gap-1"
-			>
-				<CardTitle
-					className="text-xl font-semibold capitalize"
-				>
-					{data.city}
-				</CardTitle>
-				<CardDescription>{data.description}</CardDescription>
-				<CardAction>
-					<h2 className="text-xl font-semibold">
-						{data.temp_c}°C
-					</h2>
-				</CardAction>
-			</CardHeader>
-			<CardContent>
-				<div className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-					<div>{formatDisplayTime(data.time)}</div>
-					<div>Lat: {data.lat ?? "—"} Lon: {data.lon ?? "—"}</div>
-				</div>
-			</CardContent>
-			<CardFooter>
-				<details className="w-full mt-3">
-					<summary className="cursor-pointer text-sm text-slate-500">Raw JSON</summary>
-					<pre className="mt-2 p-3 rounded bg-slate-100 dark:bg-slate-900 text-xs overflow-auto">
-						{JSON.stringify(data, null, 4)}
-					</pre>
-				</details>
-			</CardFooter>
-		</Card>
 	)
 }
