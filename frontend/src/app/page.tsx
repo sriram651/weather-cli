@@ -84,7 +84,8 @@ export default function Page() {
 				setError(`Server error: ${body}`)
 				return
 			}
-			const json = (await res.json()) as WeatherResp
+			const raw = await res.json()
+			const json = raw as WeatherResp
 			setData(json)
 			// prefill input with canonical city string returned by API
 			if (json.city) setCity(json.city)
@@ -122,15 +123,6 @@ export default function Page() {
 						className="px-4 py-2 rounded bg-teal-600 text-white cursor-pointer hover:opacity-90 disabled:opacity-60 disabled:cursor-default"
 					>
 						{loading ? "Forecasting..." : "Get Weather"}
-					</button>
-					{/* Save button only visible when we have data */}
-					<button
-						type="button"
-						onClick={() => data && addFavorite(data.city)}
-						disabled={!data}
-						className="px-3 py-2 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 disabled:opacity-50"
-					>
-						Save
 					</button>
 				</form>
 
