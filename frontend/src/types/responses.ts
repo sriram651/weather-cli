@@ -5,6 +5,6 @@ export interface WeatherResp {
     time: string;
     lat?: number;
     lon?: number;
-    relative_humidity_2m?: number;
+    humidity?: number;
     rain?: number;
 }
