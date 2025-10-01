@@ -8,6 +8,7 @@ type FavouritesHook = {
     addFavorite: (city: string) => void
     removeFavorite: (city: string) => void
     isFavorite: (city: string) => boolean
+    isFull: boolean
     refetch: () => void
 }
 
@@ -79,14 +80,20 @@ export default function useFavourites(): FavouritesHook {
         const normalized = city.trim().toLowerCase()
         if (!normalized) return
 
-        // Remove duplicate if any, then add to front
-        const next = [normalized, ...favorites.filter((f) => f !== normalized)]
+        // Check if already in favorites
+        if (favorites.includes(normalized)) return
 
-        // Limit to max favorites
-        const limited = next.slice(0, FAVORITES_LIMIT)
+        // Check if favorites are full
+        if (favorites.length >= FAVORITES_LIMIT) {
+            console.warn(`Cannot add "${city}". Favorites limit (${FAVORITES_LIMIT}) reached.`)
+            return
+        }
 
-        setFavorites(limited)
-        persistFavorites(limited)
+        // Add to front
+        const next = [normalized, ...favorites]
+
+        setFavorites(next)
+        persistFavorites(next)
 
         // Dispatch custom event to sync across hook instances
         window.dispatchEvent(new Event('favorites-updated'))
@@ -113,6 +120,7 @@ export default function useFavourites(): FavouritesHook {
         addFavorite,
         removeFavorite,
         isFavorite,
+        isFull: favorites.length >= FAVORITES_LIMIT,
         refetch,
     }
 }
