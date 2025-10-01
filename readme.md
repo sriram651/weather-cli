@@ -1,130 +1,149 @@
-# Weather CLI 🌤️
+# Weather App 🌤️
 
-A simple command-line weather application built with Go that fetches real-time weather data for Indian cities.
+A weather application built with Go and Next.js that provides real-time weather data for Indian cities. Available as both a web application and CLI tool.
 
-## Features
+## 🌐 Web Version (v1.0)
 
-- 🏙️ **Indian Cities Support**: Get weather for major Indian metropolitan cities
-- 🌡️ **Comprehensive Weather Data**: Temperature, humidity, rain, weather conditions
-- 🕐 **Real-time Information**: Live weather updates with timestamps
-- 📍 **Location Details**: Latitude, longitude, elevation, and timezone
-- 🚨 **Error Handling**: User-friendly error messages for invalid inputs
-- 🎯 **Interactive CLI**: Simple city name input with validation
+Modern web application with Go backend and Next.js frontend.
 
-## Installation
-
-### Prerequisites
-- Go 1.19 or higher
-- Internet connection for weather data
+### Features
+- 🎨 **Modern UI**: Clean, responsive design with dark mode support
+- 🌡️ **Real-time Weather**: Temperature (°C/°F toggle), humidity, precipitation
+- ⭐ **Favorites**: Save up to 5 cities with localStorage persistence
+- 🔄 **Live Updates**: Weather data refreshes every 15 minutes
+- 🏙️ **Indian Cities**: Comprehensive coverage of Indian metropolitan areas
 
 ### Quick Start
-1. Clone the repository:
+
+#### Backend (Go Server)
 ```bash
-git clone https://github.com/yourusername/weather-cli.git
-cd weather-cli
+# Start the API server
+go run server/main.go
+
+# Server runs on http://localhost:8080
 ```
 
-2. Run the application:
+#### Frontend (Next.js)
 ```bash
-go run .
+# Install dependencies
+cd frontend
+npm install
+
+# Start development server
+npm run dev
+
+# Open http://localhost:3000
 ```
 
-### Build Binary (Optional)
-```bash
-# Build executable
-go build -o weather
-
-# Run the binary
-./weather
-```
-
-## Usage
-
-1. Start the application:
-```bash
-go run .
-```
-
-2. Enter an Indian city name when prompted:
-```
-Type in any Indian Metro City to get the weather: chennai
-```
-
-3. View the weather details:
-```
-Weather Details:
-  Latitude     : 13.0000
-  Longitude    : 80.1250
-  Timezone      : GMT
-  Elevation     : 12.00 meters
-  Current Time  : Thursday, Aug 14, 2025 - 4:00 PM
-  Interval      : 900 seconds
-  Rain          : 0.000000 mm
-  Weather Code  : Overcast
-```
-
-## Supported Cities
-
-The application currently supports major Indian metropolitan cities. To see all supported cities, check the `locations/cities.json` file.
-
-*Common cities include: Chennai, Mumbai, Delhi, Bangalore, Hyderabad, Kolkata, Pune, Coimbatore, Madurai, Tirunelveli, and more.*
-
-## Project Structure
-
+### Project Structure
 ```
 weather-cli/
-├── main.go                    # Main application entry point
-├── go.mod                     # Go module definition
-├── structs.go                 # Weather data structures
-├── displayWeather.go          # Weather formatting and display
-├── buildUriWithLocation.go    # API URL construction
-├── returnFormat.json          # API response reference
-├── locations/                 # Location data package
-│   ├── cities.json           # City coordinates database
-│   ├── getLocationByCity.go  # City lookup functionality
-│   ├── go.mod               # Package module
-│   └── structs.go           # Location data structures
-└── weather_codes/            # Weather code mapping package
-    ├── data.json            # Weather code to description mapping
-    ├── getWeatherDescription.go # Weather code processing
-    └── go.mod              # Package module
+├── server/              # Go HTTP API server
+│   └── main.go
+├── frontend/            # Next.js web application
+│   ├── src/
+│   │   ├── app/        # Next.js pages
+│   │   ├── components/ # React components
+│   │   ├── hooks/      # Custom React hooks (useFavourites)
+│   │   └── types/      # TypeScript definitions
+│   └── package.json
+├── pkg/                 # Shared Go packages
+│   └── weather/        # Weather API client
+├── locations/           # City coordinates database
+│   └── cities.json
+└── weather_codes/       # Weather descriptions
+    └── data.json
 ```
 
-## Error Handling
+### API Endpoints
+- `GET /weather?city={city}` - Get weather for a city
 
-The application provides helpful error messages for common scenarios:
+Example:
+```bash
+curl "http://localhost:8080/weather?city=chennai"
+```
 
-- **Invalid City**: "City not found in our database"
-- **File Access Issues**: "File specified cannot be accessed"
-- **Network Problems**: Connection and API-related errors
-- **Invalid Input**: Empty or malformed city names
+---
 
-## API
+## 💻 CLI Version (v0)
 
-This application uses the [Open-Meteo API](https://open-meteo.com/) for weather data:
-- **Free to use**: No API key required
-- **Real-time data**: 15-minute refresh intervals
-- **Comprehensive**: Temperature, humidity, precipitation, weather codes
+Simple command-line interface for quick weather checks.
+
+### Quick Start
+```bash
+cd cli
+go run .
+```
+
+Full CLI documentation: [cli/README.md](cli/README.md)
+
+---
+
+## 🌍 Supported Cities
+
+Major Indian cities including Chennai, Mumbai, Delhi, Bangalore, Hyderabad, Kolkata, Pune, Coimbatore, and more. See `locations/cities.json` for the complete list.
 
 ### Adding New Cities
+Edit `locations/cities.json`:
+```json
+{
+  "cityname": {
+    "lat": 12.34,
+    "lon": 56.78
+  }
+}
+```
 
-To add support for new cities:
-1. Edit `locations/cities.json`
-2. Add city name (lowercase) with latitude and longitude coordinates
-3. Test with the application
+## 🔧 Technical Stack
 
-## Technical Details
-
+### Backend
 - **Language**: Go 1.19+
-- **Architecture**: Modular package design
-- **API**: RESTful HTTP requests with JSON responses
-- **Data Storage**: JSON file-based city database
-- **Error Handling**: Comprehensive error checking and user feedback
+- **API**: Open-Meteo (free, no API key required)
+- **Server**: Native Go HTTP server with CORS
 
-## License
+### Frontend
+- **Framework**: Next.js 14+ (React)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **State**: React hooks (useState, useEffect)
+
+## 📝 Environment Variables
+
+Create a `.env` file in the root:
+```env
+# Add any configuration here
+```
+
+## 🚀 Development
+
+### Backend Development
+```bash
+# Run server with auto-reload (requires air or similar)
+go run server/main.go
+```
+
+### Frontend Development
+```bash
+cd frontend
+npm run dev
+```
+
+### Building for Production
+```bash
+# Backend
+go build -o weather-server server/main.go
+
+# Frontend
+cd frontend
+npm run build
+npm start
+```
+
+## 📄 License
 
 This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-Built with ❤️ using Go
+Built with ❤️ using Go and Next.js
