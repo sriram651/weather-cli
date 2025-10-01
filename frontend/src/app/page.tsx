@@ -1,65 +1,25 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { WeatherResp } from "@/types/responses"
 import Favorites from "@/components/Favourites"
 import { Skeleton } from "@/components/ui/skeleton"
 import WeatherCard from "@/components/WeatherCard"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-
-const FAVORITES_KEY = "weather:favorites"
-const FAVORITES_LIMIT = 5
+import useFavourites from "@/hooks/useFavourites"
 
 export default function Page() {
 	const [city, setCity] = useState<string>("")
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 	const [data, setData] = useState<WeatherResp | null>(null)
-	const [favorites, setFavorites] = useState<string[]>([])
 
 	// Temp conversion flag
 	const [unit, setUnit] = useState<"C" | "F">("C")
 
-	useEffect(() => {
-		// load favorites from localStorage on mount
-		try {
-			const raw = localStorage.getItem(FAVORITES_KEY)
-			if (raw) {
-				setFavorites(JSON.parse(raw) as string[])
-			}
-		} catch (e) {
-			console.error("failed to load favorites", e)
-			// ignore parse problems, start fresh
-			setFavorites([])
-		}
-	}, [])
-
-	function persistFavorites(list: string[]) {
-		try {
-			localStorage.setItem(FAVORITES_KEY, JSON.stringify(list))
-		} catch (e) {
-			console.error("failed to persist favorites", e)
-			// ignore storage errors for v0.1
-		}
-	}
-
-	function addFavorite(c: string) {
-		const normalized = c.trim().toLowerCase()
-		if (!normalized) return
-		// remove duplicate if any, then unshift
-		const next = [normalized, ...favorites.filter((f) => f !== normalized)]
-		// limit length
-		const limited = next.slice(0, FAVORITES_LIMIT)
-		setFavorites(limited)
-		persistFavorites(limited)
-	}
-
-	function removeFavorite(c: string) {
-		const next = favorites.filter((f) => f !== c)
-		setFavorites(next)
-		persistFavorites(next)
-	}
+	// Use the custom hook for favorites management
+	const { favorites, removeFavorite } = useFavourites()
 
 	async function fetchWeatherFor(qcity?: string) {
 		const queryCity = (qcity ?? city).trim()
@@ -155,7 +115,7 @@ export default function Page() {
 					)}
 
 					{!loading && !error && data && (
-						<WeatherCard data={data} onSave={(city) => addFavorite(city)} unit={unit} />
+						<WeatherCard data={data} unit={unit} />
 					)}
 					{!loading && !error && !data && (
 						<div className="mt-4 text-sm text-slate-500">No data yet — ask for weather.</div>
