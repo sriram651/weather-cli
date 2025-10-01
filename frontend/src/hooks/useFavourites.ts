@@ -54,6 +54,17 @@ export default function useFavourites(): FavouritesHook {
     useEffect(() => {
         // Load favorites from localStorage on mount
         refetch()
+
+        // Listen for updates from other hook instances
+        const handleUpdate = () => {
+            refetch()
+        }
+
+        window.addEventListener('favorites-updated', handleUpdate)
+
+        return () => {
+            window.removeEventListener('favorites-updated', handleUpdate)
+        }
     }, [])
 
     function persistFavorites(list: string[]) {
@@ -76,7 +87,9 @@ export default function useFavourites(): FavouritesHook {
 
         setFavorites(limited)
         persistFavorites(limited)
-        refetch()
+
+        // Dispatch custom event to sync across hook instances
+        window.dispatchEvent(new Event('favorites-updated'))
     }
 
     function removeFavorite(city: string) {
@@ -85,7 +98,9 @@ export default function useFavourites(): FavouritesHook {
 
         setFavorites(next)
         persistFavorites(next)
-        refetch()
+
+        // Dispatch custom event to sync across hook instances
+        window.dispatchEvent(new Event('favorites-updated'))
     }
 
     function isFavorite(city: string): boolean {
