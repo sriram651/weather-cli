@@ -27,12 +27,10 @@ export default function WeatherCard(props: Props) {
             const d = new Date(t)
             if (isNaN(d.getTime())) return t
             return d.toLocaleString(undefined, {
-                weekday: "short",
-                day: "numeric",
                 month: "short",
+                day: "numeric",
                 hour: "2-digit",
                 minute: "2-digit",
-                timeZoneName: "shortGeneric",
             })
         } catch {
             return t
@@ -111,7 +109,7 @@ export default function WeatherCard(props: Props) {
                     <div className="flex items-start gap-3">
                         <Clock className="mt-1 text-slate-500" />
                         <div>
-                            <div className="text-xs text-slate-500">Local Time</div>
+                            <div className="text-xs text-slate-500">Last Updated</div>
                             <div className="font-medium">{formatDisplayTime(data.time)}</div>
                         </div>
                     </div>
