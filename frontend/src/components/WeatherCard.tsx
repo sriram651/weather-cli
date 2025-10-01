@@ -16,11 +16,12 @@ function toF(c: number) {
 
 export default function WeatherCard(props: Props) {
     const { data, unit } = props;
-    const { isFavorite, addFavorite } = useFavourites()
+    const { isFavorite, addFavorite, isFull } = useFavourites()
 
     const temp = unit === "F" ? toF(data.temp_c) : data.temp_c
     const label = unit ?? "C"
     const saved = isFavorite(data.city)
+    const cannotSave = saved || (isFull && !saved)
 
     function handleAddFavorite() {
         addFavorite(data.city)
@@ -85,7 +86,7 @@ export default function WeatherCard(props: Props) {
                         </div>
                     </div>
 
-                    <Button onClick={handleAddFavorite} size="sm" disabled={saved} className="cursor-pointer disabled:cursor-auto">
+                    <Button onClick={handleAddFavorite} size="sm" disabled={cannotSave} className="cursor-pointer disabled:cursor-auto">
                         {saved ? "Saved" : "Save"}
                     </Button>
                 </div>

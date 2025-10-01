@@ -19,7 +19,7 @@ export default function Page() {
 	const [unit, setUnit] = useState<"C" | "F">("C")
 
 	// Use the custom hook for favorites management
-	const { favorites, removeFavorite } = useFavourites()
+	const { favorites, removeFavorite, isFull } = useFavourites()
 
 	async function fetchWeatherFor(qcity?: string) {
 		const queryCity = (qcity ?? city).trim()
@@ -90,6 +90,7 @@ export default function Page() {
 					favorites={favorites}
 					onFetch={(c) => fetchWeatherFor(c)}
 					onRemove={(c) => removeFavorite(c)}
+					isFull={isFull}
 				/>
 
 				<div className="mt-4 ml-auto flex items-center space-x-2">
