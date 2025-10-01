@@ -21,7 +21,7 @@ type WeatherResp struct {
 	Lat         float64 `json:"lat,omitempty"`
 	Lon         float64 `json:"lon,omitempty"`
 	WeatherCode int     `json:"weather_code"`
-	Humidity    float64 `json:"relative_humidity_2m"`
+	Humidity    float64 `json:"humidity"`
 	Rain        float64 `json:"rain"`
 }
 
@@ -46,7 +46,6 @@ type cityEntry struct {
 // 1. Always starts with a Chennai fallback (so it never breaks).
 // 2. Tries to parse JSON as array of cityEntry objects.
 // 3. If that fails, tries JSON as object map (name -> coords).
-// 4. Falls back to Chennai only if everything fails.
 func readCities() (map[string][2]float64, error) {
 	// try to read locations/cities.json relative to working dir or parent
 	paths := []string{
@@ -136,14 +135,6 @@ func firstNonZero(f1, f2 float64) float64 {
 
 // GetWeather looks up coordinates for the city, calls Open-Meteo current_weather,
 // and returns a sanitized WeatherResp.
-// near the top of pkg/weather/weather.go add these imports if not present:
-//   "context"
-//   "encoding/json"
-//   "fmt"
-//   "io"
-//   "net/http"
-//   "strings"
-//   "errors"
 
 var (
 	ErrCitiesUnavailable = errors.New("cities data unavailable")
@@ -177,8 +168,8 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	lat := coords[0]
 	lon := coords[1]
 
-	// build Open-Meteo URL for current weather
-	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f&current_weather=true&timezone=auto", lat, lon)
+	// build Open-Meteo URL for current weather with humidity and rain
+	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f&current=temperature_2m,weather_code,relative_humidity_2m,rain&timezone=auto", lat, lon)
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	resp, err := httpClient.Do(req)
@@ -197,15 +188,13 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 		Latitude       float64 `json:"latitude"`
 		Longitude      float64 `json:"longitude"`
 		Generationtime float64 `json:"generationtime_ms"`
-		CurrentWeather struct {
-			Temperature float64 `json:"temperature"`
+		Current        struct {
+			Temperature float64 `json:"temperature_2m"`
 			WeatherCode int     `json:"weather_code"`
 			Time        string  `json:"time"`
-			Windspeed   float64 `json:"windspeed"`
-			Winddir     float64 `json:"winddirection"`
 			Humidity    float64 `json:"relative_humidity_2m"`
 			Rain        float64 `json:"rain"`
-		} `json:"current_weather"`
+		} `json:"current"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
@@ -213,21 +202,22 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	}
 
 	codes := loadWeatherCodes()
-	desc, ok := codes[raw.CurrentWeather.WeatherCode]
+	desc, ok := codes[raw.Current.WeatherCode]
 	if !ok {
-		desc = fmt.Sprintf("Unknown code %d", raw.CurrentWeather.WeatherCode)
+		desc = fmt.Sprintf("Unknown code %d", raw.Current.WeatherCode)
 	}
 	fmt.Printf("Weather: %+v\n", raw)
 
 	out := WeatherResp{
 		City:        city,
-		TempC:       raw.CurrentWeather.Temperature,
+		TempC:       raw.Current.Temperature,
 		Description: desc,
-		Timestamp:   raw.CurrentWeather.Time,
+		Timestamp:   raw.Current.Time,
 		Lat:         raw.Latitude,
 		Lon:         raw.Longitude,
-		Humidity:    raw.CurrentWeather.Humidity,
-		Rain:        raw.CurrentWeather.Rain,
+		Humidity:    raw.Current.Humidity,
+		Rain:        raw.Current.Rain,
+		WeatherCode: raw.Current.WeatherCode,
 	}
 	return out, nil
 }

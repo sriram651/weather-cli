@@ -104,7 +104,7 @@ export default function WeatherCard(props: Props) {
                         <Droplet className="mt-1 text-slate-500" />
                         <div>
                             <div className="text-xs text-slate-500">Humidity</div>
-                            <div className="font-mono">{data.relative_humidity_2m ?? data.relative_humidity_2m ?? "—"}%</div>
+                            <div className="font-mono">{data.humidity ?? "—"}%</div>
                         </div>
                     </div>
 
