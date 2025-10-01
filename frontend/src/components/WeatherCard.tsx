@@ -3,10 +3,10 @@ import { WeatherResp } from "@/types/responses"
 import { Clock, Cloud, Droplet, MapPin } from "lucide-react"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
+import useFavourites from "@/hooks/useFavourites"
 
 type Props = {
     data: WeatherResp
-    onSave?: (city: string) => void
     unit?: "C" | "F"
 }
 
@@ -15,11 +15,16 @@ function toF(c: number) {
 }
 
 export default function WeatherCard(props: Props) {
-    const { data, unit, onSave } = props;
+    const { data, unit } = props;
+    const { isFavorite, addFavorite } = useFavourites()
 
     const temp = unit === "F" ? toF(data.temp_c) : data.temp_c
     const label = unit ?? "C"
+    const saved = isFavorite(data.city)
 
+    function handleAddFavorite() {
+        addFavorite(data.city)
+    }
 
     function formatDisplayTime(t?: string) {
         if (!t) return "—"
@@ -80,11 +85,9 @@ export default function WeatherCard(props: Props) {
                         </div>
                     </div>
 
-                    {onSave && (
-                        <Button onClick={() => onSave(data.city)} size="sm">
-                            Save
-                        </Button>
-                    )}
+                    <Button onClick={handleAddFavorite} size="sm" disabled={saved} className="cursor-pointer disabled:cursor-auto">
+                        {saved ? "Saved" : "Save"}
+                    </Button>
                 </div>
             </CardHeader>
 
