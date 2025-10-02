@@ -1,31 +1,111 @@
 {
-    "chennai": {
-        "latitude": 13.0827,
-        "longitude": 80.2707
+    "los_angeles": {
+        "latitude": 34.0522,
+        "longitude": -118.2437
     },
-    "tirunelveli": {
-        "latitude": 8.8650,
-        "longitude": 77.6700
+    "san_francisco": {
+        "latitude": 37.7749,
+        "longitude": -122.4194
     },
-    "coimbatore": {
-        "latitude": 11.0168,
-        "longitude": 76.9558
+    "seattle": {
+        "latitude": 47.6062,
+        "longitude": -122.3321
     },
-    "madurai": {
-        "latitude": 9.9258,
-        "longitude": 78.1198
+    "vancouver": {
+        "latitude": 49.2827,
+        "longitude": -123.1207
     },
-    "mumbai": {
-        "latitude": 19.0760,
-        "longitude": 72.8777
+    "denver": {
+        "latitude": 39.7392,
+        "longitude": -104.9903
+    },
+    "phoenix": {
+        "latitude": 33.4484,
+        "longitude": -112.0740
+    },
+    "calgary": {
+        "latitude": 51.0447,
+        "longitude": -114.0719
+    },
+    "chicago": {
+        "latitude": 41.8781,
+        "longitude": -87.6298
+    },
+    "new_york": {
+        "latitude": 40.7128,
+        "longitude": -74.0060
+    },
+    "toronto": {
+        "latitude": 43.6532,
+        "longitude": -79.3832
+    },
+    "miami": {
+        "latitude": 25.7617,
+        "longitude": -80.1918
+    },
+    "boston": {
+        "latitude": 42.3601,
+        "longitude": -71.0589
+    },
+    "london": {
+        "latitude": 51.5074,
+        "longitude": -0.1278
+    },
+    "dublin": {
+        "latitude": 53.3498,
+        "longitude": -6.2603
+    },
+    "lisbon": {
+        "latitude": 38.7223,
+        "longitude": -9.1393
+    },
+    "paris": {
+        "latitude": 48.8566,
+        "longitude": 2.3522
+    },
+    "amsterdam": {
+        "latitude": 52.3676,
+        "longitude": 4.9041
+    },
+    "berlin": {
+        "latitude": 52.5200,
+        "longitude": 13.4050
+    },
+    "rome": {
+        "latitude": 41.9028,
+        "longitude": 12.4964
+    },
+    "madrid": {
+        "latitude": 40.4168,
+        "longitude": -3.7038
+    },
+    "cairo": {
+        "latitude": 30.0444,
+        "longitude": 31.2357
+    },
+    "istanbul": {
+        "latitude": 41.0082,
+        "longitude": 28.9784
+    },
+    "athens": {
+        "latitude": 37.9838,
+        "longitude": 23.7275
+    },
+    "moscow": {
+        "latitude": 55.7558,
+        "longitude": 37.6173
+    },
+    "dubai": {
+        "latitude": 25.2048,
+        "longitude": 55.2708
     },
     "delhi": {
         "latitude": 28.6139,
         "longitude": 77.2090
     },
-    "kolkata": {
-        "latitude": 22.5726,
-        "longitude": 88.3639
+    "mumbai": {
+        "latitude": 19.0760,
+        "longitude": 72.8777
     },
     "bangalore": {
         "latitude": 12.9716,
@@ -34,6 +114,14 @@
     "hyderabad": {
         "latitude": 17.3850,
         "longitude": 78.4867
+    },
+    "chennai": {
+        "latitude": 13.0827,
+        "longitude": 80.2707
+    },
+    "kolkata": {
+        "latitude": 22.5726,
+        "longitude": 88.3639
     },
     "pune": {
         "latitude": 18.5204,
@@ -203,6 +291,18 @@
         "latitude": 10.7905,
         "longitude": 78.7047
     },
+    "tirunelveli": {
+        "latitude": 8.8650,
+        "longitude": 77.6700
+    },
+    "coimbatore": {
+        "latitude": 11.0168,
+        "longitude": 76.9558
+    },
+    "madurai": {
+        "latitude": 9.9258,
+        "longitude": 78.1198
+    },
     "bareilly": {
         "latitude": 28.3670,
         "longitude": 79.4304
@@ -218,5 +318,73 @@
     "moradabad": {
         "latitude": 28.8386,
         "longitude": 78.7733
+    },
+    "bangkok": {
+        "latitude": 13.7563,
+        "longitude": 100.5018
+    },
+    "jakarta": {
+        "latitude": -6.2088,
+        "longitude": 106.8456
+    },
+    "hanoi": {
+        "latitude": 21.0285,
+        "longitude": 105.8542
+    },
+    "singapore": {
+        "latitude": 1.3521,
+        "longitude": 103.8198
+    },
+    "kuala_lumpur": {
+        "latitude": 3.1390,
+        "longitude": 101.6869
+    },
+    "manila": {
+        "latitude": 14.5995,
+        "longitude": 120.9842
+    },
+    "hong_kong": {
+        "latitude": 22.3193,
+        "longitude": 114.1694
+    },
+    "shanghai": {
+        "latitude": 31.2304,
+        "longitude": 121.4737
+    },
+    "beijing": {
+        "latitude": 39.9042,
+        "longitude": 116.4074
+    },
+    "taipei": {
+        "latitude": 25.0330,
+        "longitude": 121.5654
+    },
+    "tokyo": {
+        "latitude": 35.6762,
+        "longitude": 139.6503
+    },
+    "seoul": {
+        "latitude": 37.5665,
+        "longitude": 126.9780
+    },
+    "osaka": {
+        "latitude": 34.6937,
+        "longitude": 135.5023
+    },
+    "sydney": {
+        "latitude": -33.8688,
+        "longitude": 151.2093
+    },
+    "melbourne": {
+        "latitude": -37.8136,
+        "longitude": 144.9631
+    },
+    "brisbane": {
+        "latitude": -27.4698,
+        "longitude": 153.0251
+    },
+    "auckland": {
+        "latitude": -36.8485,
+        "longitude": 174.7633
     }
 }
