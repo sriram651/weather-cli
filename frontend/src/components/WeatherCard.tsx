@@ -123,7 +123,7 @@ export default function WeatherCard(props: Props) {
                         <div className="mt-1 text-slate-500">🌧️</div>
                         <div>
                             <div className="text-xs text-slate-500">Precipitation</div>
-                            <div className="font-mono">{(data.rain ?? 0).toFixed(2)} mm</div>
+                            <div className="font-mono">{data.precipitation_probability ?? 0} %</div>
                         </div>
                     </div>
                 </div>

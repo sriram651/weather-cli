@@ -8,5 +8,6 @@ export interface WeatherResp {
     lon?: number;
     humidity?: number;
     rain?: number;
+    precipitation_probability?: number;
     is_day?: 1 | 0;
 }

@@ -27,7 +27,6 @@ export default function Page() {
 	async function fetchWeatherFor(qcity?: string) {
 		const queryCity = (qcity ?? city).trim()
 		setError(null)
-		setData(null)
 		setLoading(true)
 		try {
 			const encoded = encodeURIComponent(queryCity || "")
