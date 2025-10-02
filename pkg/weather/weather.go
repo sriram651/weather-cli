@@ -14,17 +14,18 @@ import (
 )
 
 type WeatherResp struct {
-	City        string  `json:"city"`
-	TempC       float64 `json:"temp_c"`
-	Description string  `json:"description"`
-	Timestamp   string  `json:"time"`
-	Lat         float64 `json:"lat,omitempty"`
-	Lon         float64 `json:"lon,omitempty"`
-	WeatherCode int     `json:"weather_code"`
-	Humidity    float64 `json:"humidity"`
-	Rain        float64 `json:"rain"`
-	IsDay       int     `json:"is_day"`
-	FeelsLike   float64 `json:"apparent_temperature"`
+	City                     string  `json:"city"`
+	TempC                    float64 `json:"temp_c"`
+	Description              string  `json:"description"`
+	Timestamp                string  `json:"time"`
+	Lat                      float64 `json:"lat,omitempty"`
+	Lon                      float64 `json:"lon,omitempty"`
+	WeatherCode              int     `json:"weather_code"`
+	Humidity                 float64 `json:"humidity"`
+	Rain                     float64 `json:"rain"`
+	PrecipitationProbability float64 `json:"precipitation_probability"`
+	IsDay                    int     `json:"is_day"`
+	FeelsLike                float64 `json:"apparent_temperature"`
 }
 
 // Reusable HTTP client with a 10s timeout.
@@ -171,7 +172,7 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	lon := coords[1]
 
 	// build Open-Meteo URL for current weather with humidity and rain
-	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f&current=temperature_2m,weather_code,relative_humidity_2m,rain,is_day,apparent_temperature&timezone=auto", lat, lon)
+	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f&current=temperature_2m,weather_code,relative_humidity_2m,rain,precipitation_probability,is_day,apparent_temperature&timezone=auto", lat, lon)
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	resp, err := httpClient.Do(req)
@@ -191,13 +192,14 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 		Longitude      float64 `json:"longitude"`
 		Generationtime float64 `json:"generationtime_ms"`
 		Current        struct {
-			Temperature float64 `json:"temperature_2m"`
-			WeatherCode int     `json:"weather_code"`
-			Time        string  `json:"time"`
-			Humidity    float64 `json:"relative_humidity_2m"`
-			Rain        float64 `json:"rain"`
-			IsDay       int     `json:"is_day"`
-			FeelsLike   float64 `json:"apparent_temperature"`
+			Temperature              float64 `json:"temperature_2m"`
+			WeatherCode              int     `json:"weather_code"`
+			Time                     string  `json:"time"`
+			Humidity                 float64 `json:"relative_humidity_2m"`
+			Rain                     float64 `json:"rain"`
+			PrecipitationProbability float64 `json:"precipitation_probability"`
+			IsDay                    int     `json:"is_day"`
+			FeelsLike                float64 `json:"apparent_temperature"`
 		} `json:"current"`
 	}
 
@@ -213,17 +215,18 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	fmt.Printf("Weather: %+v\n", raw)
 
 	out := WeatherResp{
-		City:        city,
-		TempC:       raw.Current.Temperature,
-		Description: desc,
-		Timestamp:   raw.Current.Time,
-		Lat:         raw.Latitude,
-		Lon:         raw.Longitude,
-		Humidity:    raw.Current.Humidity,
-		Rain:        raw.Current.Rain,
-		WeatherCode: raw.Current.WeatherCode,
-		IsDay:       raw.Current.IsDay,
-		FeelsLike:   raw.Current.FeelsLike,
+		City:                     city,
+		TempC:                    raw.Current.Temperature,
+		Description:              desc,
+		Timestamp:                raw.Current.Time,
+		Lat:                      raw.Latitude,
+		Lon:                      raw.Longitude,
+		Humidity:                 raw.Current.Humidity,
+		Rain:                     raw.Current.Rain,
+		PrecipitationProbability: raw.Current.PrecipitationProbability,
+		WeatherCode:              raw.Current.WeatherCode,
+		IsDay:                    raw.Current.IsDay,
+		FeelsLike:                raw.Current.FeelsLike,
 	}
 	return out, nil
 }
