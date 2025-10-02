@@ -49,6 +49,6 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/weather", weatherHandler)
 	addr := ":8080"
-	log.Printf("server listening on http://localhost%s/", addr)
+	log.Printf("🚀 Go Server started, listening on http://localhost%s/", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }

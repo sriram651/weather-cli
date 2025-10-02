@@ -19,6 +19,7 @@ export default function WeatherCard(props: Props) {
     const { isFavorite, addFavorite, isFull } = useFavourites()
 
     const temp = unit === "F" ? toF(data.temp_c) : data.temp_c
+    const apparent_temperature = unit === "F" ? toF(data.apparent_temperature) : data.apparent_temperature
     const label = unit ?? "C"
     const saved = isFavorite(data.city)
     const cannotSave = saved || (isFull && !saved)
@@ -61,7 +62,7 @@ export default function WeatherCard(props: Props) {
                                 {Math.round(temp)}
                                 <span className="text-base font-medium">°{label}</span>
                             </div>
-                            <div className="text-xs text-slate-500 mt-1">Feels like {Math.round(temp)}°</div>
+                            <div className="text-xs text-slate-500 mt-1">Feels like {Math.round(apparent_temperature)}°</div>
                         </div>
                     </div>
 

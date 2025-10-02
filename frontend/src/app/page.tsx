@@ -8,12 +8,15 @@ import WeatherCard from "@/components/WeatherCard"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import useFavourites from "@/hooks/useFavourites"
+import useTheme from "@/hooks/useTheme"
 
 export default function Page() {
 	const [city, setCity] = useState<string>("")
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 	const [data, setData] = useState<WeatherResp | null>(null)
+
+	const theme = useTheme(data?.is_day ?? 1)
 
 	// Temp conversion flag
 	const [unit, setUnit] = useState<"C" | "F">("C")
