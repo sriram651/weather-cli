@@ -7,8 +7,7 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"weather-cli/pkg/weather"
+	"weather-cli/server/pkg/weather"
 )
 
 func weatherHandler(w http.ResponseWriter, r *http.Request) {
