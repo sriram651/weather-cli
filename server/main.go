@@ -6,7 +6,9 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
 	"time"
+	"weather-cli/server/pkg/cache"
 	"weather-cli/server/pkg/weather"
 )
 
@@ -46,6 +48,26 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// Initialize Redis cache
+	// Read Redis configuration from environment variables with defaults
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379" // Default Redis address
+	}
+	redisPassword := os.Getenv("REDIS_PASSWORD") // Empty if no password
+
+	log.Printf("Connecting to Redis at %s...", redisAddr)
+	cacheClient, err := cache.NewClient(redisAddr, redisPassword, 0)
+	if err != nil {
+		log.Printf("⚠️  Failed to connect to Redis: %v", err)
+		log.Printf("⚠️  Running WITHOUT cache - API calls will not be cached")
+	} else {
+		log.Printf("✅ Redis connected successfully")
+		// Set the cache client for weather package to use
+		weather.SetCacheClient(cacheClient)
+		defer cacheClient.Close()
+	}
+
 	http.HandleFunc("/weather", weatherHandler)
 	addr := ":8080"
 	log.Printf("🚀 Go Server started, listening on http://localhost%s/", addr)

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -138,17 +139,52 @@ func firstNonZero(f1, f2 float64) float64 {
 
 // GetWeather looks up coordinates for the city, calls Open-Meteo current_weather,
 // and returns a sanitized WeatherResp.
+// If a cache client is configured (via SetCacheClient), it will check cache first
+// and store results for 15-minute intervals.
 
 var (
 	ErrCitiesUnavailable = errors.New("cities data unavailable")
 	ErrCityNotFound      = errors.New("city not found")
 )
 
+// CacheClient interface defines methods needed for caching weather data
+type CacheClient interface {
+	Get(ctx context.Context, city string) ([]byte, error)
+	Set(ctx context.Context, city string, data interface{}) error
+}
+
+var cacheClient CacheClient
+
+// SetCacheClient configures the cache client to use for weather requests
+// Pass nil to disable caching
+func SetCacheClient(client CacheClient) {
+	cacheClient = client
+}
+
 func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	if strings.TrimSpace(city) == "" {
 		return WeatherResp{}, fmt.Errorf("city name is required")
 	}
 	cityKey := strings.ToLower(strings.TrimSpace(city))
+
+	// Try cache first if cache client is configured
+	if cacheClient != nil {
+		cached, err := cacheClient.Get(ctx, cityKey)
+		if err != nil {
+			// Log cache error but continue to API call
+			log.Printf("Cache get error for %s: %v", cityKey, err)
+		} else if cached != nil {
+			// Cache hit! Unmarshal and return
+			var resp WeatherResp
+			if err := json.Unmarshal(cached, &resp); err == nil {
+				log.Printf("Cache HIT for %s", cityKey)
+				return resp, nil
+			}
+			log.Printf("Cache data unmarshal error for %s: %v", cityKey, err)
+		}
+		// Cache miss - continue to API call
+		log.Printf("Cache MISS for %s", cityKey)
+	}
 
 	cities, err := readCities()
 	if err != nil {
@@ -228,6 +264,17 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 		IsDay:                    raw.Current.IsDay,
 		FeelsLike:                raw.Current.FeelsLike,
 	}
+
+	// Store in cache if cache client is configured
+	if cacheClient != nil {
+		if err := cacheClient.Set(ctx, cityKey, out); err != nil {
+			// Log error but don't fail the request
+			log.Printf("Cache set error for %s: %v", cityKey, err)
+		} else {
+			log.Printf("Cached weather data for %s", cityKey)
+		}
+	}
+
 	return out, nil
 }
 
