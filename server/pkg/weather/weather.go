@@ -184,7 +184,7 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	// if upstream returns non-200, capture body to help debugging
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return WeatherResp{}, fmt.Errorf("upstream error %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		return WeatherResp{}, fmt.Errorf("upstream error fetching weather data %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
 	var raw struct {
