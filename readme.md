@@ -39,7 +39,9 @@ npm run dev
 ```
 weather-cli/
 ├── server/              # Go HTTP API server
-│   └── main.go
+│   ├── main.go
+│   └── pkg/            # Shared Go packages
+│       └── weather/    # Weather API client
 ├── frontend/            # Next.js web application
 │   ├── src/
 │   │   ├── app/        # Next.js pages
@@ -47,8 +49,6 @@ weather-cli/
 │   │   ├── hooks/      # Custom React hooks (useFavourites)
 │   │   └── types/      # TypeScript definitions
 │   └── package.json
-├── pkg/                 # Shared Go packages
-│   └── weather/        # Weather API client
 ├── locations/           # City coordinates database
 │   └── cities.json
 └── weather_codes/       # Weather descriptions
