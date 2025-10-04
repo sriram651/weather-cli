@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 	"weather-cli/server/pkg/cache"
 	"weather-cli/server/pkg/weather"
@@ -47,6 +48,53 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+func weatherForecastHandler(w http.ResponseWriter, r *http.Request) {
+	// Allow browser requests from any origin (CORS).
+	// Needed so the upcoming web UI can call this API directly.
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	// Respond quickly to preflight requests.
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	city := r.URL.Query().Get("city")
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+
+	days := os.Getenv("WEATHER_FORECAST_DAYS")
+	log.Printf("WEATHER_FORECAST_DAYS: %s", days)
+	if days == "" {
+		days = "7" // default to 7 days
+	}
+
+	daysInt, err := strconv.Atoi(days)
+	if err != nil || daysInt < 1 || daysInt > 16 {
+		daysInt = 7 // fallback to default if invalid
+	}
+
+	resp, err := weather.GetWeatherForecast(ctx, city, daysInt)
+
+	if err != nil {
+		// map package-level errors to proper HTTP codes
+		if errors.Is(err, weather.ErrCityNotFound) {
+			w.Header().Set("Content-Type", "application/json")
+			// CORS header already set above
+			http.Error(w, `{"error":"city not found"}`, http.StatusNotFound)
+			return
+		}
+		log.Printf("GetWeatherForecast error: %v\n", err)
+		w.Header().Set("Content-Type", "application/json")
+		http.Error(w, `{"error":"upstream or server error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(resp)
+}
+
 func main() {
 	// Initialize Redis cache
 	// Read Redis configuration from environment variables with defaults
@@ -69,6 +117,7 @@ func main() {
 	}
 
 	http.HandleFunc("/weather", weatherHandler)
+	http.HandleFunc("/weather/forecast", weatherForecastHandler)
 	addr := ":8080"
 	log.Printf("🚀 Go Server started, listening on http://localhost%s/", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))

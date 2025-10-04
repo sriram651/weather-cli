@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"
+
 type WeatherResp struct {
 	City                     string  `json:"city"`
 	TempC                    float64 `json:"temp_c"`
@@ -27,6 +29,28 @@ type WeatherResp struct {
 	PrecipitationProbability float64 `json:"precipitation_probability"`
 	IsDay                    int     `json:"is_day"`
 	FeelsLike                float64 `json:"apparent_temperature"`
+}
+
+// DailyForecast represents a single day's forecast
+type DailyForecast struct {
+	Date                        string  `json:"date"`
+	TempMax                     float64 `json:"temp_max"`
+	TempMin                     float64 `json:"temp_min"`
+	ApparentTempMax             float64 `json:"apparent_temp_max"`
+	ApparentTempMin             float64 `json:"apparent_temp_min"`
+	PrecipitationProbabilityMax int     `json:"precipitation_probability_max"`
+	PrecipitationProbabilityMin int     `json:"precipitation_probability_min"`
+	WeatherCode                 int     `json:"weather_code"`
+	Description                 string  `json:"description"`
+	Sunrise                     string  `json:"sunrise"`
+	Sunset                      string  `json:"sunset"`
+	DaylightDuration            float64 `json:"daylight_duration"`
+}
+
+// ForecastResp is the response for the forecast endpoint
+type ForecastResp struct {
+	City     string          `json:"city"`
+	Forecast []DailyForecast `json:"forecast"`
 }
 
 // Reusable HTTP client with a 10s timeout.
@@ -161,6 +185,46 @@ func SetCacheClient(client CacheClient) {
 	cacheClient = client
 }
 
+func loadWeatherCodes() map[int]string {
+	// Try multiple paths to find weather_codes/data.json relative to working dir or parent
+	paths := []string{
+		"weather_codes/data.json",
+		filepath.Join("..", "weather_codes", "data.json"),
+	}
+
+	var data []byte
+	var lastErr error
+	for _, p := range paths {
+		data, lastErr = os.ReadFile(p)
+		if lastErr == nil && len(data) > 0 {
+			break
+		}
+	}
+
+	if lastErr != nil || len(data) == 0 {
+		// fallback minimal map
+		return map[int]string{
+			0: "Clear sky",
+			1: "Mainly clear",
+			2: "Partly cloudy",
+			3: "Overcast",
+		}
+	}
+
+	var m map[string]string
+	if err := json.Unmarshal(data, &m); err != nil {
+		return map[int]string{}
+	}
+
+	out := make(map[int]string)
+	for k, v := range m {
+		var code int
+		fmt.Sscanf(k, "%d", &code)
+		out[code] = v
+	}
+	return out
+}
+
 func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	if strings.TrimSpace(city) == "" {
 		return WeatherResp{}, fmt.Errorf("city name is required")
@@ -286,27 +350,117 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	return out, nil
 }
 
-func loadWeatherCodes() map[int]string {
-	file := "weather_codes/data.json"
-	data, err := os.ReadFile(file)
+func GetWeatherForecast(ctx context.Context, city string, days int) (ForecastResp, error) {
+	if strings.TrimSpace(city) == "" {
+		return ForecastResp{}, fmt.Errorf("city name is required")
+	}
+
+	// TODO: Validate days parameter (e.g., max 16 days per Open-Meteo limits)
+
+	cityKey := strings.ToLower(strings.TrimSpace(city))
+
+	cities, err := readCities()
+
 	if err != nil {
-		// fallback minimal map
-		return map[int]string{
-			0: "Clear sky",
-			1: "Mainly clear",
-			2: "Partly cloudy",
-			3: "Overcast",
+		// propagate a clear error; handler will map to 500
+		return ForecastResp{}, fmt.Errorf("%w: %v", ErrCitiesUnavailable, err)
+	}
+
+	// TODO: Consider extracting city lookup logic into shared function (DRY with GetWeather)
+	coords, ok := cities[cityKey]
+
+	if !ok {
+		// TODO: Add same fallback logic as GetWeather (try splitting at comma)
+		// Let the caller decide to return 404
+		return ForecastResp{}, ErrCityNotFound
+	}
+
+	lat := coords[0]
+	lon := coords[1]
+
+	// Build the Open-Meteo URL for daily forecast
+	// with temperature max/min, weather code, precipitation probability, sunrise/sunset
+	// and timezone auto-detection
+	// TODO: Add &forecast_days=%d parameter to respect the days argument
+	// TODO: Missing daylight_duration in query params (present in struct but not requested from API)
+	url := fmt.Sprintf("%s?latitude=%f&longitude=%f&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,weather_code,precipitation_probability_max,precipitation_probability_min,sunrise,sunset,daylight_duration&timezone=auto&forecast_days=%d", OPEN_METEO_BASE_URL, lat, lon, days)
+
+	// Create HTTP request with context
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	resp, err := httpClient.Do(req)
+
+	if err != nil {
+		return ForecastResp{}, fmt.Errorf("upstream request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// If upstream returns non-200, capture body to help debugging
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return ForecastResp{}, fmt.Errorf("upstream error fetching weather data %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
+	var raw struct {
+		Latitude       float64 `json:"latitude"`
+		Longitude      float64 `json:"longitude"`
+		Generationtime float64 `json:"generationtime_ms"`
+		Daily          struct {
+			Time                        []string  `json:"time"`
+			TempMax                     []float64 `json:"temperature_2m_max"`
+			TempMin                     []float64 `json:"temperature_2m_min"`
+			ApparentTempMax             []float64 `json:"apparent_temperature_max"`
+			ApparentTempMin             []float64 `json:"apparent_temperature_min"`
+			PrecipitationProbabilityMax []int     `json:"precipitation_probability_max"`
+			PrecipitationProbabilityMin []int     `json:"precipitation_probability_min"`
+			WeatherCode                 []int     `json:"weather_code"`
+			Sunrise                     []string  `json:"sunrise"`
+			Sunset                      []string  `json:"sunset"`
+			DaylightDuration            []float64 `json:"daylight_duration"`
+		} `json:"daily"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		return ForecastResp{}, fmt.Errorf("decode failed: %w", err)
+	}
+
+	codes := loadWeatherCodes()
+
+	// We transform the raw daily data into our DailyForecast structs
+	// TODO: Pre-allocate slice capacity for better performance: make([]DailyForecast, 0, days)
+	var forecasts []DailyForecast
+	// TODO: Use min(days, len(raw.Daily.Time)) to avoid potential panic if API returns fewer days
+	numDays := len(raw.Daily.Time)
+	if days < numDays {
+		numDays = days
+	}
+
+	for i := 0; i < numDays; i++ {
+		desc, ok := codes[raw.Daily.WeatherCode[i]]
+		if !ok {
+			desc = fmt.Sprintf("Unknown code %d", raw.Daily.WeatherCode[i])
 		}
+
+		forecasts = append(forecasts, DailyForecast{
+			Date:                        raw.Daily.Time[i],
+			TempMax:                     raw.Daily.TempMax[i],
+			TempMin:                     raw.Daily.TempMin[i],
+			ApparentTempMax:             raw.Daily.ApparentTempMax[i],
+			ApparentTempMin:             raw.Daily.ApparentTempMin[i],
+			PrecipitationProbabilityMax: raw.Daily.PrecipitationProbabilityMax[i],
+			PrecipitationProbabilityMin: raw.Daily.PrecipitationProbabilityMin[i],
+			WeatherCode:                 raw.Daily.WeatherCode[i],
+			Description:                 desc,
+			Sunrise:                     raw.Daily.Sunrise[i],
+			Sunset:                      raw.Daily.Sunset[i],
+			DaylightDuration:            raw.Daily.DaylightDuration[i],
+		})
 	}
-	var m map[string]string
-	if err := json.Unmarshal(data, &m); err != nil {
-		return map[int]string{}
+
+	// Construct the final response
+	out := ForecastResp{
+		City:     city,
+		Forecast: forecasts,
 	}
-	out := make(map[int]string)
-	for k, v := range m {
-		var code int
-		fmt.Sscanf(k, "%d", &code)
-		out[code] = v
-	}
-	return out
+
+	return out, nil
 }
