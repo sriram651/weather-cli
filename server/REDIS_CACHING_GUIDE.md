@@ -659,12 +659,13 @@ If you see old weather data:
 ### Cache Invalidation
 Manually clear cache when needed:
 ```go
-func InvalidateCity(ctx context.Context, city string) error {
+// Assume 'client' is a cache.Client instance injected or available in scope
+func InvalidateCity(ctx context.Context, client *cache.Client, city string) error {
     // Delete all cache keys for this city
     pattern := fmt.Sprintf("weather:%s:*", city)
-    iter := rdb.Scan(ctx, 0, pattern, 0).Iterator()
+    iter := client.Scan(ctx, 0, pattern, 0).Iterator()
     for iter.Next(ctx) {
-        rdb.Del(ctx, iter.Val())
+        client.Del(ctx, iter.Val())
     }
     return iter.Err()
 }
