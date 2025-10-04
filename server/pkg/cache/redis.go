@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -62,7 +63,9 @@ func roundTo15Min(t time.Time) time.Time {
 // buildKey creates a cache key for a city and timestamp
 // Format: "weather:<city>:<rounded-timestamp>"
 // Example: "weather:mumbai:2025-10-03T10:15:00Z"
+// Normalizes city name to prevent key fragmentation from mixed casing/whitespace
 func buildKey(city string, t time.Time) string {
+	city = strings.ToLower(strings.TrimSpace(city))
 	rounded := roundTo15Min(t)
 	return fmt.Sprintf("weather:%s:%s", city, rounded.UTC().Format(time.RFC3339))
 }
