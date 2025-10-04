@@ -181,9 +181,10 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 				return resp, nil
 			}
 			log.Printf("Cache data unmarshal error for %s: %v", cityKey, err)
+		} else {
+			// Cache miss - continue to API call
+			log.Printf("Cache MISS for %s", cityKey)
 		}
-		// Cache miss - continue to API call
-		log.Printf("Cache MISS for %s", cityKey)
 	}
 
 	cities, err := readCities()
