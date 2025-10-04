@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import useFavourites from "@/hooks/useFavourites"
 import useTheme from "@/hooks/useTheme"
+import Link from "next/link"
 
 export default function Page() {
 	const [city, setCity] = useState<string>("")
@@ -71,6 +72,10 @@ export default function Page() {
 		<main className="min-h-screen flex items-start justify-center p-8 bg-slate-50 dark:bg-slate-900">
 			<div className="w-full max-w-2xl">
 				<h1 className="text-2xl font-semibold mb-4">Weather Digest — v0.1</h1>
+
+				<Link href="/forecast" className="my-4 text-sm text-slate-500 hover:underline">
+					Go to Forecast
+				</Link>
 
 				<form onSubmit={onSubmit} className="flex gap-3 items-center">
 					<input
