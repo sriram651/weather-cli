@@ -2,7 +2,6 @@ package cache
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -68,10 +67,10 @@ func buildKey(city string, t time.Time) string {
 	return fmt.Sprintf("weather:%s:%s", city, rounded.UTC().Format(time.RFC3339))
 }
 
-// Get retrieves cached weather data for a city
+// Get retrieves cached weather data for a city at a specific timestamp
 // Returns nil if cache miss (key doesn't exist or expired)
-func (c *Client) Get(ctx context.Context, city string) ([]byte, error) {
-	key := buildKey(city, time.Now())
+func (c *Client) Get(ctx context.Context, city string, at time.Time) ([]byte, error) {
+	key := buildKey(city, at)
 
 	val, err := c.rdb.Get(ctx, key).Result()
 	if err == redis.Nil {
@@ -88,18 +87,13 @@ func (c *Client) Get(ctx context.Context, city string) ([]byte, error) {
 
 // Set stores weather data in cache with 15-minute TTL
 // TTL (Time To Live) means Redis will automatically delete the key after 15 minutes
-func (c *Client) Set(ctx context.Context, city string, data interface{}) error {
-	key := buildKey(city, time.Now())
-
-	// Marshal data to JSON
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return fmt.Errorf("failed to marshal data: %w", err)
-	}
+// data should be the raw bytes to cache (e.g., JSON-encoded data)
+func (c *Client) Set(ctx context.Context, city string, at time.Time, data []byte) error {
+	key := buildKey(city, at)
 
 	// Set with 15-minute expiration
 	// After 15 minutes, Redis automatically deletes this key
-	err = c.rdb.Set(ctx, key, jsonData, 15*time.Minute).Err()
+	err := c.rdb.Set(ctx, key, data, 15*time.Minute).Err()
 	if err != nil {
 		return fmt.Errorf("redis set failed: %w", err)
 	}

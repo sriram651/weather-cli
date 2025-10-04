@@ -149,8 +149,8 @@ var (
 
 // CacheClient interface defines methods needed for caching weather data
 type CacheClient interface {
-	Get(ctx context.Context, city string) ([]byte, error)
-	Set(ctx context.Context, city string, data interface{}) error
+	Get(ctx context.Context, city string, at time.Time) ([]byte, error)
+	Set(ctx context.Context, city string, at time.Time, data []byte) error
 }
 
 var cacheClient CacheClient
@@ -167,9 +167,12 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	}
 	cityKey := strings.ToLower(strings.TrimSpace(city))
 
+	// Compute timestamp once to ensure Get and Set use the same cache key
+	now := time.Now()
+
 	// Try cache first if cache client is configured
 	if cacheClient != nil {
-		cached, err := cacheClient.Get(ctx, cityKey)
+		cached, err := cacheClient.Get(ctx, cityKey, now)
 		if err != nil {
 			// Log cache error but continue to API call
 			log.Printf("Cache get error for %s: %v", cityKey, err)
@@ -268,7 +271,11 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 
 	// Store in cache if cache client is configured
 	if cacheClient != nil {
-		if err := cacheClient.Set(ctx, cityKey, out); err != nil {
+		// Marshal to JSON for caching
+		jsonData, err := json.Marshal(out)
+		if err != nil {
+			log.Printf("Cache marshal error for %s: %v", cityKey, err)
+		} else if err := cacheClient.Set(ctx, cityKey, now, jsonData); err != nil {
 			// Log error but don't fail the request
 			log.Printf("Cache set error for %s: %v", cityKey, err)
 		} else {
