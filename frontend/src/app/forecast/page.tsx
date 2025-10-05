@@ -4,6 +4,8 @@ import { useState } from "react"
 import { DailyForecastResp } from "@/types/responses"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ForecastGrid } from "@/components/Forecasts"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 export default function Page() {
     const [city, setCity] = useState<string>("")
@@ -12,7 +14,7 @@ export default function Page() {
     const [data, setData] = useState<DailyForecastResp | null>(null)
 
     // Temp conversion flag
-    // const [unit, setUnit] = useState<"C" | "F">("C")
+    const [unit, setUnit] = useState<"C" | "F">("C")
 
     async function fetchWeatherFor(qcity?: string) {
         const queryCity = (qcity ?? city).trim()
@@ -78,7 +80,7 @@ export default function Page() {
                     </button>
                 </form>
 
-                {/* <div className="mt-4 ml-auto flex items-center space-x-2">
+                <div className="mt-4 ml-auto flex items-center space-x-2">
                     <Switch
                         id="celcius-fahrenheit"
                         checked={unit === "F"}
@@ -87,11 +89,15 @@ export default function Page() {
                     <Label htmlFor="celcius-fahrenheit">
                         Switch to °{unit === "C" ? "F" : "C"}
                     </Label>
-                </div> */}
+                </div>
 
                 <div className="mt-6">
                     {loading && (
-                        <Skeleton className="w-full h-60 bg-slate-200 dark:bg-slate-700" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-0">
+                            {Array.from({ length: 6 }).map((_, idx) => (
+                                <Skeleton key={idx} className="w-full h-60 bg-slate-200 dark:bg-slate-700" />
+                            ))}
+                        </div>
                     )}
 
                     {!loading && error && (
@@ -101,7 +107,7 @@ export default function Page() {
                     )}
 
                     {!loading && !error && data && (
-                        <ForecastGrid data={data} />
+                        <ForecastGrid data={data} unit={unit} />
                     )}
                     {!loading && !error && !data && (
                         <div className="mt-4 text-sm text-slate-500">No data yet — ask for weather.</div>

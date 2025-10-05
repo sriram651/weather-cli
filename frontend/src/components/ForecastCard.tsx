@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from "./ui/card";
 import { Clock, Cloud, CloudDrizzle, CloudRain, CloudSnow, CloudSun, Sun, Sunrise, Sunset, Thermometer } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Progress } from "./ui/progress";
+import { convertToF } from "@/lib/utils";
 
 // Helper function to get temperature gradient
 function getTempGradient(tempMin: number, tempMax: number) {
@@ -47,6 +48,17 @@ function formatDaylightDuration(seconds: number) {
     return `${hours}h ${minutes}m`;
 }
 
+// Helper function to format date to "Friday, Oct 5"
+function formatDate(dateString: string) {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+    };
+    return date.toLocaleDateString('en-US', options);
+}
+
 export default function ForecastCard({ forecast, unit = 'C' }: { forecast: DailyForecast; unit?: 'C' | 'F' }) {
     const {
         date,
@@ -62,10 +74,13 @@ export default function ForecastCard({ forecast, unit = 'C' }: { forecast: Daily
         daylight_duration,
     } = forecast;
 
-    const avgPrecipProb = (precipitation_probability_min + precipitation_probability_max) / 2;
+    const temp_min_converted = unit === 'C' ? temp_min : convertToF(temp_min);
+    const temp_max_converted = unit === 'C' ? temp_max : convertToF(temp_max);
+    const apparent_temp_min_converted = unit === 'C' ? apparent_temp_min : convertToF(apparent_temp_min);
+    const apparent_temp_max_converted = unit === 'C' ? apparent_temp_max : convertToF(apparent_temp_max);
 
     return (
-        <Card className="w-full overflow-hidden transition-all hover:shadow-lg">
+        <Card className="w-full overflow-hidden transition-all hover:shadow-xl border-2">
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -73,7 +88,7 @@ export default function ForecastCard({ forecast, unit = 'C' }: { forecast: Daily
                             {getWeatherIcon(description)}
                         </div>
                         <div>
-                            <h3 className="text-lg font-semibold">{date}</h3>
+                            <h3 className="text-lg font-semibold">{formatDate(date)}</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400">{description}</p>
                         </div>
                     </div>
@@ -92,7 +107,7 @@ export default function ForecastCard({ forecast, unit = 'C' }: { forecast: Daily
                         <div className="absolute inset-0 rounded-2xl opacity-30 blur-lg" />
                         <div className="z-10 text-center">
                             <div className="text-3xl font-bold leading-none">
-                                {Math.round(temp_min)}° / {Math.round(temp_max)}°
+                                {Math.round(temp_min_converted)}° / {Math.round(temp_max_converted)}°
                                 <span className="text-sm font-medium ml-1">{unit}</span>
                             </div>
                         </div>
@@ -111,7 +126,7 @@ export default function ForecastCard({ forecast, unit = 'C' }: { forecast: Daily
                 {/* Accordion for more details */}
                 <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="details" className="border-0">
-                        <AccordionTrigger className="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 py-2">
+                        <AccordionTrigger className="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 py-0 cursor-pointer">
                             More details
                         </AccordionTrigger>
                         <AccordionContent>
@@ -140,7 +155,7 @@ export default function ForecastCard({ forecast, unit = 'C' }: { forecast: Daily
                                     <div>
                                         <p className="text-xs text-slate-500">Feels like</p>
                                         <p className="font-medium">
-                                            {Math.round(apparent_temp_min)}° / {Math.round(apparent_temp_max)}° {unit}
+                                            {Math.round(apparent_temp_min_converted)}° / {Math.round(apparent_temp_max_converted)}° {unit}
                                         </p>
                                     </div>
                                 </div>
