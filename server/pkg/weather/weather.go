@@ -234,8 +234,10 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 	// Compute timestamp once to ensure Get and Set use the same cache key
 	now := time.Now()
 
+	useRedisCache := os.Getenv("USE_REDIS_CACHE")
+
 	// Try cache first if cache client is configured
-	if cacheClient != nil {
+	if useRedisCache == "true" && cacheClient != nil {
 		cached, err := cacheClient.Get(ctx, cityKey, now)
 		if err != nil {
 			// Log cache error but continue to API call
@@ -333,8 +335,8 @@ func GetWeather(ctx context.Context, city string) (WeatherResp, error) {
 		FeelsLike:                raw.Current.FeelsLike,
 	}
 
-	// Store in cache if cache client is configured
-	if cacheClient != nil {
+	// Store in cache if cache client is configured and caching is enabled
+	if useRedisCache == "true" && cacheClient != nil {
 		// Marshal to JSON for caching
 		jsonData, err := json.Marshal(out)
 		if err != nil {

@@ -11,6 +11,8 @@ import (
 	"time"
 	"weather-cli/server/pkg/cache"
 	"weather-cli/server/pkg/weather"
+
+	"github.com/joho/godotenv"
 )
 
 func weatherHandler(w http.ResponseWriter, r *http.Request) {
@@ -96,25 +98,16 @@ func weatherForecastHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// Initialize Redis cache
-	// Read Redis configuration from environment variables with defaults
-	redisAddr := os.Getenv("REDIS_ADDR")
-	if redisAddr == "" {
-		redisAddr = "localhost:6379" // Default Redis address
+	// Load environment variables from .env file
+	if err := godotenv.Load("./.env"); err != nil {
+		log.Fatalf("⚠️  No .env file found or error loading it: %v", err)
+		log.Fatalf("   Falling back to system environment variables")
 	}
-	redisPassword := os.Getenv("REDIS_PASSWORD") // Empty if no password
 
-	log.Printf("Connecting to Redis at %s...", redisAddr)
-	cacheClient, err := cache.NewClient(redisAddr, redisPassword, 0)
-	if err != nil {
-		log.Printf("⚠️  Failed to connect to Redis: %v", err)
-		log.Printf("⚠️  Running WITHOUT cache - API calls will not be cached")
-	} else {
-		log.Printf("✅ Redis connected successfully")
-		// Set the cache client for weather package to use
-		weather.SetCacheClient(cacheClient)
-		defer cacheClient.Close()
-	}
+	log.Println("✅  Envs loaded...")
+
+	// Connect to Redis if enabled
+	cache.ConnectToRedis()
 
 	http.HandleFunc("/weather", weatherHandler)
 	http.HandleFunc("/weather/forecast", weatherForecastHandler)
