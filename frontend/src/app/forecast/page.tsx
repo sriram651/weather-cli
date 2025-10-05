@@ -6,6 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ForecastGrid } from "@/components/Forecasts"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import Favorites from "@/components/Favourites"
+import useFavourites from "@/hooks/useFavourites"
 
 export default function Page() {
     const [city, setCity] = useState<string>("")
@@ -15,6 +17,9 @@ export default function Page() {
 
     // Temp conversion flag
     const [unit, setUnit] = useState<"C" | "F">("C")
+
+    // Use the custom hook for favorites management
+    const { favorites, removeFavorite, isFull } = useFavourites()
 
     async function fetchWeatherFor(qcity?: string) {
         const queryCity = (qcity ?? city).trim()
@@ -79,6 +84,13 @@ export default function Page() {
                         {loading ? "Forecasting..." : "Get Weather"}
                     </button>
                 </form>
+
+                <Favorites
+                    favorites={favorites}
+                    onFetch={(c) => fetchWeatherFor(c)}
+                    onRemove={(c) => removeFavorite(c)}
+                    isFull={isFull}
+                />
 
                 <div className="mt-4 ml-auto flex items-center space-x-2">
                     <Switch
