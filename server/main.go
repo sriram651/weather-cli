@@ -107,7 +107,10 @@ func main() {
 	log.Println("✅  Envs loaded...")
 
 	// Connect to Redis if enabled
-	cache.ConnectToRedis()
+	cacheClient := cache.ConnectToRedis()
+	if cacheClient != nil {
+		defer cacheClient.Close()
+	}
 
 	http.HandleFunc("/weather", weatherHandler)
 	http.HandleFunc("/weather/forecast", weatherForecastHandler)
