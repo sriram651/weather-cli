@@ -1,6 +1,6 @@
 # Weather App 🌤️
 
-A weather application built with Go and Next.js that provides real-time weather data for Indian cities. Available as both a web application and CLI tool.
+A weather application built with Go and Next.js that provides real-time weather data for cities worldwide. Available as both a web application and CLI tool.
 
 ## 🌐 Web Version (v1.0)
 
@@ -12,7 +12,7 @@ Modern web application with Go backend and Next.js frontend.
 - ⭐ **Favorites**: Save up to 5 cities with localStorage persistence
 - 🔄 **Live Updates**: Weather data refreshes every 15 minutes
 - ⚡ **Redis Caching**: Fast response times (~2ms vs ~500ms) with 15-minute cache
-- 🏙️ **Indian Cities**: Comprehensive coverage of Indian metropolitan areas
+- 🏙️ **Global Cities**: Supports Indian metros plus international cities (London, NYC, Toronto, etc.)
 
 ### Quick Start
 
@@ -89,7 +89,7 @@ Full CLI documentation: [cli/README.md](cli/README.md)
 
 ## 🌍 Supported Cities
 
-Major Indian cities including Chennai, Mumbai, Delhi, Bangalore, Hyderabad, Kolkata, Pune, Coimbatore, and more. See `locations/cities.json` for the complete list.
+Indian metros (Chennai, Mumbai, Delhi, Bangalore, Hyderabad, Kolkata, Pune, Coimbatore) and international cities (London, New York, Los Angeles, Toronto, and more). See `locations/cities.json` for the complete list.
 
 ### Adding New Cities
 Edit `locations/cities.json`:
@@ -112,7 +112,7 @@ Edit `locations/cities.json`:
 - **Dependencies**: `github.com/redis/go-redis/v9`
 
 ### Frontend
-- **Framework**: Next.js 14+ (React)
+- **Framework**: Next.js 15 (React 19)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui
@@ -120,15 +120,15 @@ Edit `locations/cities.json`:
 
 ## 📝 Environment Variables
 
-Optional configuration for the backend server:
+Optional configuration:
 
 ```bash
-# Redis Configuration (optional - defaults to localhost:6379)
+# Backend — Redis Configuration (optional, defaults to localhost:6379)
 export REDIS_ADDR="localhost:6379"
 export REDIS_PASSWORD=""  # Leave empty if no password
 
-# Start the server
-go run server/main.go
+# Frontend — API URL (optional, defaults to http://localhost:8080)
+export NEXT_PUBLIC_API_URL="http://localhost:8080"
 ```
 
 **Redis Caching Benefits:**
@@ -169,6 +169,24 @@ cd frontend
 npm run build
 npm start
 ```
+
+## 🚢 Deployment
+
+### Backend (Fly.io)
+The backend is containerized via `Dockerfile` and deployed to Fly.io.
+
+1. Install the [Fly CLI](https://fly.io/docs/flyctl/install/) and run `flyctl auth login`
+2. From the repo root: `flyctl launch` (answer **No** to "Deploy now?" to review `fly.toml` first)
+3. Deploy: `flyctl deploy`
+4. Optional: set Redis env vars via `flyctl secrets set REDIS_ADDR=... REDIS_PASSWORD=...`
+
+CI/CD: A GitHub Actions workflow (`.github/workflows/fly-deploy.yml`) auto-deploys on push to `master`. Requires the `FLY_API_TOKEN` secret in GitHub (Fly sets this automatically during `flyctl launch`).
+
+### Frontend (Vercel)
+1. Import the repo on [Vercel](https://vercel.com)
+2. Set **Root Directory** to `frontend`
+3. Set environment variable: `NEXT_PUBLIC_API_URL=https://your-backend.fly.dev`
+4. Deploy — Vercel auto-detects Next.js
 
 ## 📄 License
 
