@@ -30,7 +30,8 @@ export default function Page() {
 		setLoading(true)
 		try {
 			const encoded = encodeURIComponent(queryCity || "")
-			const res = await fetch(`http://localhost:8080/weather?city=${encoded}`)
+			const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+				const res = await fetch(`${apiBase}/weather?city=${encoded}`)
 			if (res.status === 404) {
 				let txt = "City not found"
 				try {
@@ -54,9 +55,9 @@ export default function Page() {
 		} catch (err: unknown) {
 			if (err instanceof Error) {
 				setError(err.message)
+			} else {
+				setError("unknown error")
 			}
-
-			setError("unknown error")
 		} finally {
 			setLoading(false)
 		}
